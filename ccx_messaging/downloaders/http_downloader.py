@@ -94,6 +94,7 @@ class HTTPDownloader:
                 LOG.warning("Invalid URL format: %s", src)
                 raise CCXMessagingError("Invalid URL format")
 
+        response = None
         try:
             response = requests.get(src)
             data = response.content
@@ -113,7 +114,6 @@ class HTTPDownloader:
                 file_data.write(data)
                 file_data.flush()
                 yield file_data.name
-            response.close()
 
         except requests.exceptions.ConnectionError as err:
             LOG.warning("Connection error while downloading the file: %s", err)
@@ -135,3 +135,7 @@ class HTTPDownloader:
         except Exception as err:
             LOG.warning("Unknown error while downloading the file: %s", err)
             raise CCXMessagingError("Unknown error while downloading the file") from err
+        finally:
+            # MEMORY LEAK FIX: Zabezpečiť, že HTTP response je vždy zatvorené
+            if response is not None:
+                response.close()
